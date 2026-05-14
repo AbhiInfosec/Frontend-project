@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculator | CodeAlpha</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c0f;
+  --glass:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.08);
+  --glass-hover:rgba(255,255,255,0.08);
+  --glass-active:rgba(255,255,255,0.12);
+  --accent:#a78bfa;
+  --accent2:#7c3aed;
+  --op-color:#c4b5fd;
+  --danger:#f87171;
+  --text:#f1f5f9;
+  --muted:#64748b;
+  --display-bg:rgba(0,0,0,0.4);
+}
+body{
+  background:var(--bg);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Outfit',sans-serif;
+  padding:20px;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 20%,rgba(124,58,237,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%,rgba(167,139,250,0.08) 0%,transparent 60%);
+  pointer-events:none;
+}
+.card{
+  width:100%;max-width:360px;
+  background:rgba(15,15,20,0.9);
+  border:1px solid var(--glass-border);
+  border-radius:28px;padding:28px;
+  backdrop-filter:blur(24px);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.03),0 40px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.06);
+  animation:rise 0.5s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(24px) scale(0.97)}to{opacity:1;transform:none}}
+.brand{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#7c3aed);box-shadow:0 0 10px rgba(167,139,250,0.5)}
+.brand-name{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;font-weight:500}
+.display{
+  background:var(--display-bg);border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;padding:20px 20px 16px;margin-bottom:20px;
+  min-height:110px;display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;position:relative;
+}
+.display::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.3),transparent)}
+.history{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-align:right;min-height:18px;word-break:break-all;margin-bottom:6px}
+.number{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:400;color:var(--text);text-align:right;word-break:break-all;line-height:1;transition:color 0.15s,transform 0.1s}
+.number.flash{color:var(--accent);transform:scale(1.02)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.btn{
+  height:68px;border:1px solid var(--glass-border);border-radius:14px;
+  background:var(--glass);color:var(--text);
+  font-family:'Outfit',sans-serif;font-size:17px;font-weight:500;
+  cursor:pointer;transition:all 0.12s ease;
+  position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;
+}
+.btn:hover{background:var(--glass-hover);border-color:rgba(255,255,255,0.14);transform:translateY(-1px)}
+.btn:active{background:var(--glass-active);transform:scale(0.96) translateY(0)}
+.btn.op{color:var(--op-color);border-color:rgba(167,139,250,0.2);background:rgba(124,58,237,0.08)}
+.btn.op:hover{background:rgba(124,58,237,0.18);border-color:rgba(167,139,250,0.35)}
+.btn.fn{color:var(--danger);border-color:rgba(248,113,113,0.2);background:rgba(248,113,113,0.06)}
+.btn.fn:hover{background:rgba(248,113,113,0.14)}
+.btn.bksp{color:#fb923c;border-color:rgba(251,146,60,0.2);background:rgba(251,146,60,0.06);font-size:20px}
+.btn.bksp:hover{background:rgba(251,146,60,0.14)}
+.btn.eq{background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;color:#fff;font-size:22px;box-shadow:0 4px 20px rgba(124,58,237,0.35)}
+.btn.eq:hover{box-shadow:0 6px 30px rgba(124,58,237,0.5);transform:translateY(-2px)}
+.btn.eq:active{transform:scale(0.95)}
+.btn.zero{grid-column:span 2}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.15);transform:scale(0);animation:ripple 0.4s ease-out;pointer-events:none}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+.hint{text-align:center;margin-top:14px;font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div>
+<div class="card">
+  <div class="brand"><div class="brand-dot"></div><span class="brand-name">CodeAlpha · Calculator</span></div>
+  <div class="display">
+    <div class="history" id="hist"></div>
+    <div class="number" id="num">0</div>
+  </div>
+  <div class="grid">
+    <button class="btn fn"  data-a="clear">AC</button>
+    <button class="btn fn"  data-a="sign">±</button>
+    <button class="btn fn"  data-a="pct">%</button>
+    <button class="btn op"  data-a="op" data-v="/">÷</button>
+
+    <button class="btn"     data-a="n" data-v="7">7</button>
+    <button class="btn"     data-a="n" data-v="8">8</button>
+    <button class="btn"     data-a="n" data-v="9">9</button>
+    <button class="btn op"  data-a="op" data-v="*">×</button>
+
+    <button class="btn"     data-a="n" data-v="4">4</button>
+    <button class="btn"     data-a="n" data-v="5">5</button>
+    <button class="btn"     data-a="n" data-v="6">6</button>
+    <button class="btn op"  data-a="op" data-v="-">−</button>
+
+    <button class="btn"     data-a="n" data-v="1">1</button>
+    <button class="btn"     data-a="n" data-v="2">2</button>
+    <button class="btn"     data-a="n" data-v="3">3</button>
+    <button class="btn op"  data-a="op" data-v="+">+</button>
+
+    <button class="btn bksp" data-a="bksp">⌫</button>
+    <button class="btn"     data-a="n" data-v="0">0</button>
+    <button class="btn"     data-a="dot">.</button>
+    <button class="btn eq"  data-a="eq">=</button>
+  </div>
+</div>
+<div class="hint">keyboard supported</div>
+</div>
+
+<script>
+// State
+let cur = '0';      // current number shown
+let prev = '';      // previous operand
+let op = null;      // pending operator
+let waitingForNext = false;  // after operator pressed, next digit starts fresh
+
+const N = document.getElementById('num');
+const H = document.getElementById('hist');
+const sym = {'+':'+', '-':'−', '*':'×', '/':'÷'};
+
+function display() {
+  N.textContent = cur.length > 12 ? parseFloat(cur).toExponential(3) : cur;
+}
+
+function flash() {
+  N.classList.add('flash');
+  setTimeout(() => N.classList.remove('flash'), 180);
+}
+
+function inputNum(v) {
+  if (waitingForNext) {
+    // operator was pressed — start fresh number
+    cur = v;
+    waitingForNext = false;
+  } else {
+    cur = cur === '0' ? v : cur + v;
+  }
+  display();
+}
+
+function inputDot() {
+  if (waitingForNext) { cur = '0.'; waitingForNext = false; display(); return; }
+  if (!cur.includes('.')) { cur += '.'; display(); }
+}
+
+function inputOp(o) {
+  if (op && !waitingForNext) {
+    // chain: calculate first, then set new op
+    calc(false);
+  }
+  prev = cur;
+  op = o;
+  waitingForNext = true;          // next digit = fresh number
+  H.textContent = prev + ' ' + sym[o];
+}
+
+function calc(showEquals = true) {
+  if (!op || !prev) return;
+  const a = parseFloat(prev), b = parseFloat(cur);
+  let r;
+  if (op === '/' && b === 0) { cur = 'Error'; op = null; prev = ''; waitingForNext = true; display(); return; }
+  switch (op) {
+    case '+': r = a + b; break;
+    case '-': r = a - b; break;
+    case '*': r = a * b; break;
+    case '/': r = a / b; break;
+  }
+  if (showEquals) H.textContent = prev + ' ' + sym[op] + ' ' + cur + ' =';
+  cur = String(parseFloat(r.toFixed(10)));
+  op = null; prev = '';
+  waitingForNext = true;
+  flash(); display();
+}
+
+function clear() {
+  cur = '0'; prev = ''; op = null; waitingForNext = false;
+  H.textContent = ''; display();
+}
+
+function backspace() {
+  if (waitingForNext) return;          // nothing to delete after result
+  if (cur === 'Error') { cur = '0'; display(); return; }
+  cur = cur.length > 1 ? cur.slice(0, -1) : '0';
+  display();
+}
+
+function sign() {
+  if (cur !== '0' && cur !== 'Error')
+    cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur;
+  display();
+}
+
+function pct() { cur = String(parseFloat(cur) / 100); display(); }
+
+// Button clicks
+document.querySelectorAll('.btn').forEach(b => {
+  b.addEventListener('click', e => {
+    const a = b.dataset.a, v = b.dataset.v;
+    if (a === 'n')     inputNum(v);
+    else if (a === 'dot')   inputDot();
+    else if (a === 'op')    inputOp(v);
+    else if (a === 'eq')    calc(true);
+    else if (a === 'clear') clear();
+    else if (a === 'bksp')  backspace();
+    else if (a === 'sign')  sign();
+    else if (a === 'pct')   pct();
+
+    // ripple
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = b.getBoundingClientRect(), size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
+    b.appendChild(r); r.addEventListener('animationend', () => r.remove());
+  });
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if ('0123456789'.includes(e.key)) inputNum(e.key);
+  else if (e.key === '.')  inputDot();
+  else if (['+','-','*','/'].includes(e.key)) inputOp(e.key);
+  else if (e.key === 'Enter' || e.key === '=') calc(true);
+  else if (e.key === 'Escape') clear();
+  else if (e.key === 'Backspace') backspace();
+  else if (e.key === '%') pct();
+});
+</script>
+</body>
+</html>
